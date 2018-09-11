@@ -1,0 +1,76 @@
+static_resources:
+  listeners:
+  - address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 80
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        config:
+          tracing:
+            operation_name: ingress
+          codec_type: auto
+          stat_prefix: isubata_http
+          route_config:
+            name: isubata_route
+            virtual_hosts:
+            - name: isubata_all
+              domains:
+              - "*"
+              routes:
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: isubata2
+                decorator:
+                  operation: isubata2
+          http_filters:
+          - name: envoy.router
+  clusters:
+  - name: isubata2
+    connect_timeout: 60s
+    type: static
+    lb_policy: round_robin
+    hosts:
+    - socket_address:
+        address: 127.0.0.1
+        port_value: 5000
+  - name: jaeger
+    connect_timeout: 1s
+    type: static
+    lb_policy: round_robin
+    hosts:
+    - socket_address:
+        address: 10.0.1.100
+        port_value: 9411
+tracing:
+  http:
+    name: envoy.zipkin
+    config:
+      collector_cluster: jaeger
+      collector_endpoint: "/api/v1/spans"  
+  # http:
+  #   name: envoy.dynamic.ot
+  #   config:
+  #     library: /usr/local/lib/libjaegertracing_plugin.so
+  #     config:
+  #       service_name: isubata2
+  #       sampler:
+  #         type: const
+  #         param: 1
+  #       reporter:
+  #         localAgentHostPort: 127.0.0.1:6831
+  #       headers:
+  #         jaegerDebugHeader: jaeger-debug-id
+  #         jaegerBaggageHeader: jaeger-baggage
+  #         traceBaggageHeaderPrefix: uberctx-
+  #       baggage_restrictions:
+  #         denyBaggageOnInitializationFailure: false
+  #         hostPort: ""
+admin:
+  access_log_path: "/tmp/admin-access.log"
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901
