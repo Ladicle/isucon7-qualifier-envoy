@@ -25,6 +25,13 @@ To clone this repository and run the following command.
 $ vagrant up
 ```
 
+Next, let's install monitoring tools on the host server.
+The script boots Prometheus, Grafana and Jaeger containers.
+
+```
+$ bin/install-monitoring-tools.sh
+```
+
 ## References
 
 - https://github.com/matsuu/vagrant-isucon/tree/master/isucon7-qualifier
